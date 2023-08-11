@@ -17,7 +17,15 @@
 
 import SwiftUI
 
-struct ClockModel {
+protocol ClockModelProtocol{
+    var hours: String { set get}
+    var minutes: String {set get}
+    var seconds: String {set get}
+    
+    mutating func update()
+}
+
+struct ClockModel: ClockModelProtocol {
     var hours = "01"
     var minutes = "00"
     var seconds = "00"
@@ -36,8 +44,28 @@ struct ClockModel {
     }
 }
 
+struct ClockModelTwo: ClockModelProtocol {
+    var hours = "01"
+    var minutes = "00"
+    var seconds = "00"
+    
+    mutating func update(){
+        let date = Date()
+        let calendar = Calendar.current
+        
+        let hour = calendar.component(.hour, from: date)
+        let minute = calendar.component(.minute, from: date)
+        let second = calendar.component(.second, from: date)
+        
+        self.hours = String(format: "%02d", hour)
+        self.minutes = String(format: "%02d", minute)
+        self.seconds = String(format: "%02d", second)
+    }
+}
+
+//Modify behavior without changing the code (OCP)
 struct ClockView: View {
-    @State var vm: ClockModel
+    @State var vm: ClockModelProtocol
     
     let timer = Timer.TimerPublisher(interval: 1, runLoop: .main, mode: .common).autoconnect()
     var body: some View{
@@ -59,7 +87,7 @@ struct ClockView: View {
 struct ContentView: View {
     var body: some View {
         VStack {
-            ClockView(vm: ClockModel())
+            ClockView(vm: ClockModelTwo())
         }
         .padding()
     }
