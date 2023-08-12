@@ -16,6 +16,7 @@
 
 
 import SwiftUI
+import Combine
 
 protocol ClockModelProtocol{
     var hours: String { set get}
@@ -25,49 +26,42 @@ protocol ClockModelProtocol{
     mutating func update()
 }
 
-struct ClockModel: ClockModelProtocol {
-    var hours = "01"
-    var minutes = "00"
-    var seconds = "00"
+class ClockVM: ObservableObject {
+    @Published var hours = "00"
+    @Published var minutes = "00"
+    @Published var seconds = "00"
     
-    mutating func update(){
-        let date = Date()
-        let calendar = Calendar.current
-        
-        let hour = calendar.component(.hour, from: date)
-        let minute = calendar.component(.minute, from: date)
-        let second = calendar.component(.second, from: date)
-        
-        self.hours = String(format: "%02d", hour)
-        self.minutes = String(format: "%02d", minute)
-        self.seconds = String(format: "%02d", second)
+    private var cancellables = Set<AnyCancellable>()
+    
+    init() {
+        Timer.publish(every: 1, on: .main, in: .common)
+            .autoconnect()
+            .sink{ _ in
+                self.update()
+            }
+            .store(in: &cancellables)
     }
+        func update(){
+            let date = Date()
+            let calendar = Calendar.current
+    
+            let hour = calendar.component(.hour, from: date)
+            let minute = calendar.component(.minute, from: date)
+            let second = calendar.component(.second, from: date)
+    
+            self.hours = String(format: "%02d", hour)
+            self.minutes = String(format: "%02d", minute)
+            self.seconds = String(format: "%02d", second)
+        }
+    
+    
 }
 
-struct ClockModelTwo: ClockModelProtocol {
-    var hours = "01"
-    var minutes = "00"
-    var seconds = "00"
-    
-    mutating func update(){
-        let date = Date()
-        let calendar = Calendar.current
-        
-        let hour = calendar.component(.hour, from: date)
-        let minute = calendar.component(.minute, from: date)
-        let second = calendar.component(.second, from: date)
-        
-        self.hours = String(format: "%02d", hour)
-        self.minutes = String(format: "%02d", minute)
-        self.seconds = String(format: "%02d", second)
-    }
-}
 
 //Modify behavior without changing the code (OCP)
 struct ClockView: View {
-    @State var vm: ClockModelProtocol
-    
-    let timer = Timer.TimerPublisher(interval: 1, runLoop: .main, mode: .common).autoconnect()
+    @ObservedObject var vm: ClockVM
+        
     var body: some View{
         HStack{
             Text(vm.hours)
@@ -78,16 +72,14 @@ struct ClockView: View {
         }
         .font(.largeTitle)
         .monospacedDigit()
-        .onReceive(timer){_ in
-            vm.update()
-        }
     }
 }
 
 struct ContentView: View {
+    @StateObject var vm = ClockVM()
     var body: some View {
         VStack {
-            ClockView(vm: ClockModelTwo())
+            ClockView(vm: vm)
         }
         .padding()
     }
@@ -98,3 +90,51 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
+
+
+
+
+
+
+
+
+
+
+//
+//struct ClockModel: ClockModelProtocol {
+//    var hours = "01"
+//    var minutes = "00"
+//    var seconds = "00"
+//
+//    mutating func update(){
+//        let date = Date()
+//        let calendar = Calendar.current
+//
+//        let hour = calendar.component(.hour, from: date)
+//        let minute = calendar.component(.minute, from: date)
+//        let second = calendar.component(.second, from: date)
+//
+//        self.hours = String(format: "%02d", hour)
+//        self.minutes = String(format: "%02d", minute)
+//        self.seconds = String(format: "%02d", second)
+//    }
+//}
+//
+//struct ClockModelTwo: ClockModelProtocol {
+//    var hours = "01"
+//    var minutes = "00"
+//    var seconds = "00"
+//
+//    mutating func update(){
+//        let date = Date()
+//        let calendar = Calendar.current
+//
+//        let hour = calendar.component(.hour, from: date)
+//        let minute = calendar.component(.minute, from: date)
+//        let second = calendar.component(.second, from: date)
+//
+//        self.hours = String(format: "%02d", hour)
+//        self.minutes = String(format: "%02d", minute)
+//        self.seconds = String(format: "%02d", second)
+//    }
+//}
